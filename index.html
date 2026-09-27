@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Thread Radar</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    :root { --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280; --line: #e5e7eb; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0b0f17; --card: #151b26; --text: #e5e7eb; --muted: #9ca3af; --line: #263041; } }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, sans-serif; }
+    main { max-width: 520px; margin: 0 auto; padding: 24px 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+    label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 4px; }
+    input { width: 100%; box-sizing: border-box; font: inherit; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+    button { width: 100%; margin-top: 16px; font: inherit; font-weight: 600; padding: 14px; border: 0; border-radius: 10px; background: #ff4500; color: #fff; }
+    p { color: var(--muted); font-size: 14px; }
+    #msg { margin-top: 12px; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="card" id="setup" hidden>
+    <h2 style="margin-top:0">Thread Radar kurulum</h2>
+    <p>Bir kez yapılır. Token yalnızca bu telefonda saklanır; bu site başka hiçbir yere göndermez.</p>
+    <form id="form">
+      <label for="repo">Repo (sahip/ad)</label>
+      <input id="repo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="kullanıcı/repo">
+      <label for="pat">GitHub token</label>
+      <input id="pat" type="password" autocomplete="off" placeholder="github_pat_…">
+      <button type="submit">Kaydet ve aç</button>
+    </form>
+    <div id="msg"></div>
+  </div>
+  <p id="boot">Açılıyor…</p>
+</main>
+<script>
+  const APP = 'app/mobile/index.html';
+  const configUrl = () => new URL('__config', location.href).href;
+  const qs = new URLSearchParams(location.search);
+  const msg = (t) => { document.getElementById('msg').textContent = t; };
+
+  async function saved() {
+    const hit = await (await caches.open('radar-config')).match(configUrl());
+    return hit ? hit.json() : null;
+  }
+
+  async function ready() {
+    await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    // The first load is not controlled yet; one reload hands it to the worker.
+    if (!navigator.serviceWorker.controller) {
+      await new Promise((r) => {
+        navigator.serviceWorker.addEventListener('controllerchange', r, { once: true });
+        setTimeout(r, 3000);
+      });
+    }
+  }
+
+  async function start() {
+    if (!('serviceWorker' in navigator)) {
+      document.getElementById('boot').textContent = 'Bu tarayıcı desteklemiyor. Chrome ile aç.';
+      return;
+    }
+    const cfg = await saved();
+    if (cfg && !qs.has('setup')) {
+      await ready();
+      location.replace(APP);
+      return;
+    }
+    document.getElementById('boot').hidden = true;
+    document.getElementById('setup').hidden = false;
+    document.getElementById('repo').value = cfg?.repo || qs.get('repo') || '';
+  }
+
+  document.getElementById('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const repo = document.getElementById('repo').value.trim();
+    const pat = document.getElementById('pat').value.trim();
+    if (!/^[^/\s]+\/[^/\s]+$/.test(repo)) return msg('Repo "sahip/ad" biçiminde olmalı.');
+    if (!pat) return msg('Token boş.');
+    msg('Kontrol ediliyor…');
+    try {
+      const res = await fetch(`https://api.github.com/repos/${repo}`, { headers: { Authorization: `Bearer ${pat}` } });
+      if (!res.ok) return msg(`GitHub ${res.status}: token bu repoyu göremiyor.`);
+      const { default_branch: branch = 'main' } = await res.json();
+      const cfg = { repo, pat, branch };
+      await (await caches.open('radar-config')).put(configUrl(), new Response(JSON.stringify(cfg)));
+      // The app reads the same two values through its chrome.storage shim.
+      localStorage.setItem('radar:repo', JSON.stringify(repo));
+      localStorage.setItem('radar:pat', JSON.stringify(pat));
+      await caches.delete('radar-app');
+      await ready();
+      location.replace(APP);
+    } catch (err) {
+      msg(`Bağlanılamadı: ${err.message}`);
+    }
+  });
+
+  start();
+</script>
+</body>
+</html>
