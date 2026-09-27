@@ -1,0 +1,12 @@
+{
+  "addons": {
+    "thread-radar@ahmetyasin": {
+      "updates": [
+        {
+          "version": "0.1.4.1",
+          "update_link": "https://ahmetyasin.github.io/thread-radar-phone/firefox/thread-radar-0.1.4.1.xpi"
+        }
+      ]
+    }
+  }
+}
