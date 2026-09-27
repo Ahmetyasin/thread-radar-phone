@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Thread Radar</title>
+  <!-- Its own manifest: the shortcut must come back to this page, which the
+       Firefox add-on turns into the app (firefox/go.js). -->
+  <link rel="manifest" href="go.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    body { margin: 0; font: 17px/1.5 system-ui, sans-serif; background: #111827; color: #e5e7eb; }
+    main { max-width: 520px; margin: 0 auto; padding: 40px 20px; text-align: center; }
+    a { color: #ff7a45; }
+    #help { display: none; margin-top: 24px; color: #9ca3af; font-size: 15px; text-align: left; }
+  </style>
+</head>
+<body>
+<main>
+  <img src="icon-192.png" width="72" height="72" alt="">
+  <p>Thread Radar açılıyor…</p>
+  <div id="help">
+    <p>Açılmadıysa:</p>
+    <ol>
+      <li>Bu sayfayı <b>Firefox</b> ile açtığından emin ol.</li>
+      <li>Thread Radar eklentisi kurulu olmalı: <a href="firefox/">kurulum sayfası</a>.</li>
+    </ol>
+  </div>
+</main>
+<script>
+  // The add-on's content script replaces this tab within a moment; if it has
+  // not after a few seconds, say why.
+  setTimeout(() => { document.getElementById('help').style.display = 'block'; }, 3000);
+</script>
+</body>
+</html>
