@@ -19,7 +19,16 @@
 <body>
 <main>
   <img src="icon-192.png" width="72" height="72" alt="">
-  <p>Thread Radar açılıyor…</p>
+  <p id="opening">Thread Radar açılıyor…</p>
+  <div id="setup" style="display:none; text-align:left">
+    <h2 style="text-align:center">Kısayolu ekle</h2>
+    <ol>
+      <li>Firefox'ta sağ üstteki <b>⋮</b> menüsüne dokun.</li>
+      <li><b>Ana ekrana ekle</b>'yi seç, sonra <b>Ekle</b>.</li>
+      <li>Ana ekrandaki yeni <b>Thread Radar</b> ikonuna dokun: uygulama açılır.</li>
+    </ol>
+    <p style="color:#9ca3af;font-size:15px">Eski Thread Radar ikonunu (açılmayanı) ana ekrandan kaldırabilirsin.</p>
+  </div>
   <div id="help">
     <p>Açılmadıysa:</p>
     <ol>
@@ -29,9 +38,17 @@
   </div>
 </main>
 <script>
-  // The add-on's content script replaces this tab within a moment; if it has
-  // not after a few seconds, say why.
-  setTimeout(() => { document.getElementById('help').style.display = 'block'; }, 3000);
+  if (/[?&]kur\b/.test(location.search)) {
+    // Setup visit: stay here, and put the plain address back in the bar, so
+    // "Add to Home screen" saves go.html, which the add-on opens as the app.
+    document.getElementById('opening').style.display = 'none';
+    document.getElementById('setup').style.display = 'block';
+    history.replaceState(null, '', location.pathname);
+  } else {
+    // The add-on's content script replaces this tab within a moment; if it
+    // has not after a few seconds, say why.
+    setTimeout(() => { document.getElementById('help').style.display = 'block'; }, 3000);
+  }
 </script>
 </body>
 </html>
